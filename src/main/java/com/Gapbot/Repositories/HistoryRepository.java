@@ -1,4 +1,4 @@
 package com.Gapbot.Repositories;
 
-public class HistoryRepository {
+public interface HistoryRepository {
 }
