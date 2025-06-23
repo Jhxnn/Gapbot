@@ -79,6 +79,8 @@ public class ParticipantService {
         participants.add(participant3);
         participants.add(participant4);
 
+        participantRepository.saveAll(participants);
+
         return participants;
 
     }
