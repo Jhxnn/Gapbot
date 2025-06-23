@@ -32,7 +32,7 @@ public class HistoryService {
     public History updateMatch(UUID id, String vencedor){
         History history = historyRepository.findById(id).orElseThrow(()-> new RuntimeException("Não foi possivel encontrar"));
 
-        if(vencedor == "duo1"){
+        if("duo1".equals(vencedor)){
             history.setWinnnerDuo(history.getDuo1());
             history.setLoserDuo(history.getDuo2());
             historyRepository.save(history);
