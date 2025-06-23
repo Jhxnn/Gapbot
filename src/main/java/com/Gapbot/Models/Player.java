@@ -9,9 +9,8 @@ import java.util.UUID;
 public class Player {
 
     @Id
-    @GeneratedValue(strategy = GenerationType.AUTO)
     @Column(name = "id")
-    private UUID playerId;
+    private String playerId;
 
     private String nick;
 
@@ -21,11 +20,12 @@ public class Player {
 
     private int loses;
 
-    public UUID getPlayerId() {
+
+    public String getPlayerId() {
         return playerId;
     }
 
-    public void setPlayerId(UUID playerId) {
+    public void setPlayerId(String playerId) {
         this.playerId = playerId;
     }
 
