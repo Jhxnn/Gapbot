@@ -1,4 +1,9 @@
 package com.Gapbot.Repositories;
 
-public interface PlayerRepository {
+import com.Gapbot.Models.Player;
+import org.springframework.data.jpa.repository.JpaRepository;
+
+import java.util.UUID;
+
+public interface PlayerRepository extends JpaRepository<Player, UUID> {
 }
