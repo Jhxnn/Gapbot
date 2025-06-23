@@ -1,6 +1,8 @@
 package com.Gapbot.Bot;
 
 
+import com.Gapbot.Models.Duo;
+import com.Gapbot.Models.History;
 import com.Gapbot.Models.Participant;
 import com.Gapbot.Models.Player;
 import com.Gapbot.Repositories.PlayerRepository;
@@ -15,6 +17,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 import org.springframework.stereotype.Service;
 
+import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.List;
 import java.util.Optional;
@@ -57,13 +60,24 @@ public class BotListener extends ListenerAdapter {
                     .sorted(Comparator.comparingDouble(Player::getWinrate).reversed())
                     .toList();
 
-            for (Player player : ordenados) {
-                event.getChannel().sendMessage(player.getNick() + "   -    Winrate: " + player.getWinrate() + "%").queue();
+            StringBuilder mensagem = new StringBuilder("🏆 **Ranking por Winrate**\n\n");
+
+            for (int i = 0; i < ordenados.size(); i++) {
+                Player player = ordenados.get(i);
+                mensagem.append(i + 1).append(". ")
+                        .append(player.getNick())
+                        .append(" - ")
+                        .append("Winrate: ")
+                        .append(player.getWinrate())
+                        .append("%\n");
             }
+
+            event.getChannel().sendMessage(mensagem.toString()).queue();
         }
 
+
         if (msg.equalsIgnoreCase("!comandos")) {
-            event.getChannel().sendMessage("!ranking - Lista ranking de jogadores \n!registrar - Registra jogador  \n!match @jogador1 @jogador2 @jogador3 @jogador4 - Cria partida \n!jogador @nome - Lista dados do jogador mencionado").queue();
+            event.getChannel().sendMessage("!ranking - Lista ranking de jogadores \n!registrar - Registra jogador  \n!partida @jogador1 @jogador2 @jogador3 @jogador4 - Cria partida \n!jogador @nome - Lista dados do jogador mencionado").queue();
         }
         if (msg.startsWith("!jogador")) {
             List<User> mencionados = event.getMessage().getMentions().getUsers();
@@ -88,7 +102,7 @@ public class BotListener extends ListenerAdapter {
 
             Player player = optionalPlayer.get();
 
-            String resposta = "**" + player.getNick() + "**\n"
+            String resposta = "** " + player.getNick() + "**\n"
                     + "🏆 Vitórias: " + player.getWins() + "\n"
                     + "❌ Derrotas: " + player.getLoses() + "\n"
                     + "📊 Winrate: " + player.getWinrate() + "%";
@@ -96,14 +110,48 @@ public class BotListener extends ListenerAdapter {
             event.getChannel().sendMessage(resposta).queue();
         }
 
-        if (msg.startsWith("!match")) {
+        if (msg.startsWith("!partida")) {
             List<User> mencionados = event.getMessage().getMentions().getUsers();
-            if (mencionados.size() < 3) {
+
+            if (mencionados.size() < 4) {
                 event.getChannel()
-                        .sendMessage("❌ Você precisa mencionar os quatro jogdaores... PQP EM`")
+                        .sendMessage("❌ Você precisa mencionar os quatro jogadores... PQP EM")
                         .queue();
                 return;
             }
+
+            List<Player> players = new ArrayList<>();
+            for (User mencionado : mencionados.subList(0, 4)) {
+                Optional<Player> optionalPlayer = playerRepository.findById(mencionado.getId());
+
+                if (optionalPlayer.isEmpty()) {
+                    event.getChannel()
+                            .sendMessage("❌ O Jogador " + mencionado.getName() + " não está cadastrado... BURRO")
+                            .queue();
+                    return;
+                }
+
+                players.add(optionalPlayer.get());
+            }
+
+            // Cria participantes → duplas → partida
+            List<Participant> participantes = participantService.createParticipants(
+                    players.get(0), players.get(1), players.get(2), players.get(3)
+            );
+            List<Duo> duplas = duoService.createDuos(participantes);
+            History history = historyService.createMatch(duplas);
+            String mensagem = "**📌 ID da Partida:** `" + history.getHistoryId() + "`\n\n" +
+                    "🥇 **Duo 1**:\n" +
+                    "- " + history.getDuo1().getParticipant1().getPlayer().getNick() + " 🧙 " + history.getDuo1().getParticipant1().getChampion() + "\n" +
+                    "- " + history.getDuo1().getParticipant2().getPlayer().getNick() + " 🧙 " + history.getDuo1().getParticipant2().getChampion() + "\n\n" +
+                    "🥈 **Duo 2**:\n" +
+                    "- " + history.getDuo2().getParticipant1().getPlayer().getNick() + " 🧙 " + history.getDuo2().getParticipant1().getChampion() + "\n" +
+                    "- " + history.getDuo2().getParticipant2().getPlayer().getNick() + " 🧙 " + history.getDuo2().getParticipant2().getChampion();
+
+            event.getChannel().sendMessage(mensagem).queue();
+            event.getChannel()
+                    .sendMessage(mensagem)
+                    .queue();
         }
     }
 }
