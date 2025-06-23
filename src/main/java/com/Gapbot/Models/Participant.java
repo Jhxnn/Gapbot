@@ -13,6 +13,8 @@ public class Participant {
     @Column(name = "id")
     private UUID participantId;
 
+    @ManyToOne
+    @JoinColumn(referencedColumnName = "id", name = "player_id")
     private Player player;
 
     private String champion;

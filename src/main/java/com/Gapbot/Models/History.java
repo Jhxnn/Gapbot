@@ -13,12 +13,21 @@ public class History {
     @Column(name = "id")
     private UUID historyId;
 
+    @ManyToOne
+    @JoinColumn(referencedColumnName = "id", name = "duo_1")
     private Duo duo1;
 
+
+    @ManyToOne
+    @JoinColumn(referencedColumnName = "id", name = "duo_2")
     private Duo duo2;
 
+    @ManyToOne
+    @JoinColumn(referencedColumnName = "id", name = "duo_winner")
     private Duo winnnerDuo;
 
+    @ManyToOne
+    @JoinColumn(referencedColumnName = "id", name = "duo_loser")
     private Duo loserDuo;
 
     public UUID getHistoryId() {

@@ -5,6 +5,7 @@ import com.Gapbot.Bot.BotListener;
 import jakarta.annotation.PostConstruct;
 import net.dv8tion.jda.api.JDABuilder;
 import net.dv8tion.jda.api.entities.Activity;
+import net.dv8tion.jda.api.requests.GatewayIntent;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
@@ -30,6 +31,11 @@ public class GapbotApplication {
 		JDABuilder.createDefault(botConfig.getToken())
 				.setActivity(Activity.listening("!comandos"))
 				.addEventListeners(discordListener)
+				.enableIntents(
+						GatewayIntent.GUILD_MESSAGES,
+						GatewayIntent.MESSAGE_CONTENT,
+						GatewayIntent.GUILD_MEMBERS
+				)
 				.build();
 	}
 

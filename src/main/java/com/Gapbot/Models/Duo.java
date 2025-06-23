@@ -13,8 +13,12 @@ public class Duo {
     @Column(name = "id")
     private UUID pairId;
 
+    @ManyToOne
+    @JoinColumn(referencedColumnName = "id",name = "participante_1")
     private Participant participant1;
 
+    @ManyToOne
+    @JoinColumn(referencedColumnName = "id",name = "participante_2")
     private Participant participant2;
 
     public UUID getPairId() {
