@@ -77,7 +77,7 @@ public class BotListener extends ListenerAdapter {
 
 
         if (msg.equalsIgnoreCase("!comandos")) {
-            event.getChannel().sendMessage("!ranking - Lista ranking de jogadores \n!registrar - Registra jogador  \n!partida @jogador1 @jogador2 @jogador3 @jogador4 - Cria partida \n!jogador @nome - Lista dados do jogador mencionado").queue();
+            event.getChannel().sendMessage("!ranking - Lista ranking de jogadores \n!registrar - Registra jogador  \n!iniciar @jogador1 @jogador2 @jogador3 @jogador4 - Cria partida \n!jogador @nome - Lista dados do jogador mencionado").queue();
         }
         if (msg.startsWith("!jogador")) {
             List<User> mencionados = event.getMessage().getMentions().getUsers();
@@ -110,7 +110,7 @@ public class BotListener extends ListenerAdapter {
             event.getChannel().sendMessage(resposta).queue();
         }
 
-        if (msg.startsWith("!partida")) {
+        if (msg.startsWith("!iniciar")) {
             List<User> mencionados = event.getMessage().getMentions().getUsers();
 
             if (mencionados.size() < 4) {
@@ -134,7 +134,6 @@ public class BotListener extends ListenerAdapter {
                 players.add(optionalPlayer.get());
             }
 
-            // Cria participantes → duplas → partida
             List<Participant> participantes = participantService.createParticipants(
                     players.get(0), players.get(1), players.get(2), players.get(3)
             );
@@ -142,16 +141,18 @@ public class BotListener extends ListenerAdapter {
             History history = historyService.createMatch(duplas);
             String mensagem = "**📌 ID da Partida:** `" + history.getHistoryId() + "`\n\n" +
                     "🥇 **Duo 1**:\n" +
-                    "- " + history.getDuo1().getParticipant1().getPlayer().getNick() + " 🧙 " + history.getDuo1().getParticipant1().getChampion() + "\n" +
-                    "- " + history.getDuo1().getParticipant2().getPlayer().getNick() + " 🧙 " + history.getDuo1().getParticipant2().getChampion() + "\n\n" +
+                    "- **" + history.getDuo1().getParticipant1().getPlayer().getNick() + "** : " + history.getDuo1().getParticipant1().getChampion() + "\n" +
+                    "- **" + history.getDuo1().getParticipant2().getPlayer().getNick() + "** : " + history.getDuo1().getParticipant2().getChampion() + "\n\n" +
                     "🥈 **Duo 2**:\n" +
-                    "- " + history.getDuo2().getParticipant1().getPlayer().getNick() + " 🧙 " + history.getDuo2().getParticipant1().getChampion() + "\n" +
-                    "- " + history.getDuo2().getParticipant2().getPlayer().getNick() + " 🧙 " + history.getDuo2().getParticipant2().getChampion();
+                    "- **" + history.getDuo2().getParticipant1().getPlayer().getNick() + "** : " + history.getDuo2().getParticipant1().getChampion() + "\n" +
+                    "- **" + history.getDuo2().getParticipant2().getPlayer().getNick() + "** : " + history.getDuo2().getParticipant2().getChampion();
 
             event.getChannel().sendMessage(mensagem).queue();
-            event.getChannel()
-                    .sendMessage(mensagem)
-                    .queue();
+        }
+
+        if (msg.startsWith("!finalizar")) {
+
+
         }
     }
 }

@@ -70,9 +70,9 @@ public class ParticipantService {
         participant4.setChampion(sortearPersonagem());
 
         participant1.setPlayer(player1);
-        participant2.setPlayer(player1);
-        participant3.setPlayer(player1);
-        participant4.setPlayer(player1);
+        participant2.setPlayer(player2);
+        participant3.setPlayer(player3);
+        participant4.setPlayer(player4);
 
         participants.add(participant1);
         participants.add(participant2);
