@@ -43,8 +43,8 @@ public class BotListener extends ListenerAdapter {
 
         String msg = event.getMessage().getContentRaw();
         if (msg.equalsIgnoreCase("!registrar")) {
-            if (playerRepository.findById(event.getAuthor().getId()) != null) {
-                event.getChannel().sendMessage("❌ Jogador já cadastrado! Deve ser o asafe que ta usando né..").queue();
+            if (playerRepository.findById(event.getAuthor().getId()).isPresent()) {
+                event.getChannel().sendMessage("❌ Jogador já cadastrado! Deve ser o Asafe que tá usando né...").queue();
                 return;
             }
             playerService.createPlayer(event.getAuthor());
