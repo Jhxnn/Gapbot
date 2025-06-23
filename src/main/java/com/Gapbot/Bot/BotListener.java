@@ -5,6 +5,7 @@ import com.Gapbot.Models.Duo;
 import com.Gapbot.Models.History;
 import com.Gapbot.Models.Participant;
 import com.Gapbot.Models.Player;
+import com.Gapbot.Repositories.HistoryRepository;
 import com.Gapbot.Repositories.PlayerRepository;
 import com.Gapbot.Services.DuoService;
 import com.Gapbot.Services.HistoryService;
@@ -17,10 +18,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 import org.springframework.stereotype.Service;
 
-import java.util.ArrayList;
-import java.util.Comparator;
-import java.util.List;
-import java.util.Optional;
+import java.util.*;
 
 @Component
 public class BotListener extends ListenerAdapter {
@@ -33,6 +31,9 @@ public class BotListener extends ListenerAdapter {
 
     @Autowired
     PlayerRepository playerRepository;
+
+    @Autowired
+    HistoryRepository historyRepository;
 
     @Autowired
     HistoryService historyService;
@@ -151,8 +152,59 @@ public class BotListener extends ListenerAdapter {
         }
 
         if (msg.startsWith("!finalizar")) {
+            String[] partes = msg.split(" ");
+
+            if (partes.length < 2) {
+                event.getChannel().sendMessage("❌ Você precisa informar o ID da partida. Ex: `!finalizar <ID>`").queue();
+                return;
+            }
+
+            String idPartidaStr = partes[1];
+
+            try {
+                UUID idPartida = UUID.fromString(idPartidaStr);
+
+                Optional<History> optionalHistory = historyRepository.findById(idPartida);
+                if (optionalHistory.isEmpty()) {
+                    event.getChannel().sendMessage("⚠️ Partida não encontrada com esse ID.").queue();
+                    return;
+                }
+
+                event.getChannel().sendMessage("✅ Partida encontrada! Agora diga quem venceu com: `!ganhador duo1` ou `!ganhador duo2`").queue();
 
 
+            } catch (IllegalArgumentException e) {
+                event.getChannel().sendMessage("❌ ID inválido. Certifique-se de usar um UUID válido.").queue();
+            }
         }
+        if (msg.startsWith("!historico")) {
+            List<History> historicos = historyRepository.findAll();
+
+            if (historicos.isEmpty()) {
+                event.getChannel().sendMessage("⚠️ Nenhuma partida encontrada.").queue();
+                return;
+            }
+
+            StringBuilder mensagem = new StringBuilder("📜 **Histórico de Partidas**\n\n");
+
+            for (History h : historicos) {
+                String vencedor = h.getWinnnerDuo() != null
+                        ? h.getWinnnerDuo().getParticipant1().getPlayer().getNick() + " & " +
+                        h.getWinnnerDuo().getParticipant2().getPlayer().getNick()
+                        : "❓ Ainda não definido";
+
+                String perdedor = h.getLoserDuo() != null
+                        ? h.getLoserDuo().getParticipant1().getPlayer().getNick() + " & " +
+                        h.getLoserDuo().getParticipant2().getPlayer().getNick()
+                        : "❓ Ainda não definido";
+
+                mensagem.append("🆔 **ID:** `").append(h.getHistoryId()).append("`\n")
+                        .append("🥇 **Vencedor:** ").append(vencedor).append("\n")
+                        .append("🥈 **Perdedor:** ").append(perdedor).append("\n\n");
+            }
+
+            event.getChannel().sendMessage(mensagem.toString()).queue();
+        }
+
     }
 }
