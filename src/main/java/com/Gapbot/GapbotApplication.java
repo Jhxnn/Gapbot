@@ -1,9 +1,11 @@
 package com.Gapbot;
 
+import com.Gapbot.Bot.BotConfig;
 import com.Gapbot.Bot.BotListener;
 import jakarta.annotation.PostConstruct;
 import net.dv8tion.jda.api.JDABuilder;
 import net.dv8tion.jda.api.entities.Activity;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
 
@@ -11,6 +13,9 @@ import org.springframework.boot.autoconfigure.SpringBootApplication;
 public class GapbotApplication {
 
 	private final BotListener discordListener;
+
+	@Autowired
+	BotConfig botConfig;
 
 	public GapbotApplication(BotListener discordListener) {
 		this.discordListener = discordListener;
@@ -22,8 +27,8 @@ public class GapbotApplication {
 
 	@PostConstruct
 	public void startBot() {
-		JDABuilder.createDefault("SEU_TOKEN_AQUI")
-				.setActivity(Activity.playing("com Java"))
+		JDABuilder.createDefault(botConfig.getToken())
+				.setActivity(Activity.listening("!comandos"))
 				.addEventListeners(discordListener)
 				.build();
 	}
