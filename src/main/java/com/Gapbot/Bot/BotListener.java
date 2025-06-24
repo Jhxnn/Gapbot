@@ -18,6 +18,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 import org.springframework.stereotype.Service;
 
+import java.time.format.DateTimeFormatter;
 import java.util.*;
 
 @Component
@@ -41,8 +42,13 @@ public class BotListener extends ListenerAdapter {
     @Autowired
     ParticipantService participantService;
 
+    private final Map<String, UUID> partidasEmFinalizacao = new HashMap<>();
+
+
     @Override
     public void onMessageReceived(MessageReceivedEvent event) {
+
+
         if (event.getAuthor().isBot()) return;
 
         String msg = event.getMessage().getContentRaw();
@@ -78,8 +84,19 @@ public class BotListener extends ListenerAdapter {
 
 
         if (msg.equalsIgnoreCase("!comandos")) {
-            event.getChannel().sendMessage("!ranking - Lista ranking de jogadores \n!registrar - Registra jogador  \n!iniciar @jogador1 @jogador2 @jogador3 @jogador4 - Cria partida \n!jogador @nome - Lista dados do jogador mencionado").queue();
+            String comandos = "**📋 Lista de Comandos Disponíveis:**\n\n" +
+                    "🧾 `!comandos` — Lista todos os comandos disponíveis\n" +
+                    "📝 `!registrar` — Registra o jogador no sistema\n" +
+                    "📊 `!ranking` — Mostra o ranking dos jogadores por Winrate\n" +
+                    "🔍 `!jogador @user` — Exibe os dados do jogador mencionado\n" +
+                    "🎮 `!iniciar @j1 @j2 @j3 @j4` — Inicia uma partida com 4 jogadores mencionados\n" +
+                    "🏁 `!finalizar <ID>` — Finaliza uma partida informando o ID\n" +
+                    "📜 `!historico` — Lista todo o histórico de partidas\n" +
+                    "📉 `!historico @user` — Mostra o histórico do jogador atual";
+
+            event.getChannel().sendMessage(comandos).queue();
         }
+
         if (msg.startsWith("!jogador")) {
             List<User> mencionados = event.getMessage().getMentions().getUsers();
 
@@ -121,6 +138,13 @@ public class BotListener extends ListenerAdapter {
                 return;
             }
 
+            if (mencionados.size() > 4) {
+                event.getChannel()
+                        .sendMessage("❌ O bgl é 2x2 po, quer me fuder me beija")
+                        .queue();
+                return;
+            }
+
             List<Player> players = new ArrayList<>();
             for (User mencionado : mencionados.subList(0, 4)) {
                 Optional<Player> optionalPlayer = playerRepository.findById(mencionado.getId());
@@ -155,7 +179,7 @@ public class BotListener extends ListenerAdapter {
             String[] partes = msg.split(" ");
 
             if (partes.length < 2) {
-                event.getChannel().sendMessage("❌ Você precisa informar o ID da partida. Ex: `!finalizar <ID>`").queue();
+                event.getChannel().sendMessage("❌ Você precisa informar o ID da partida. Ex: `!finalizar <ID>. Chega dar vontade de se autodetonar aqui pqp`").queue();
                 return;
             }
 
@@ -170,6 +194,8 @@ public class BotListener extends ListenerAdapter {
                     return;
                 }
 
+                partidasEmFinalizacao.put(event.getAuthor().getId(), idPartida);
+
                 event.getChannel().sendMessage("✅ Partida encontrada! Agora diga quem venceu com: `!ganhador duo1` ou `!ganhador duo2`").queue();
 
 
@@ -178,10 +204,20 @@ public class BotListener extends ListenerAdapter {
             }
         }
         if (msg.startsWith("!historico")) {
-            List<History> historicos = historyRepository.findAll();
+            DateTimeFormatter formatter = DateTimeFormatter.ofPattern("dd/MM/yyyy");
+            List<User> mencionados = event.getMessage().getMentions().getUsers();
+
+            List<History> historicos;
+
+            if (mencionados.isEmpty()) {
+                historicos = historyRepository.findAll();
+            } else {
+                String playerId = mencionados.get(0).getId();
+                historicos = historyRepository.findByPlayerId(playerId);
+            }
 
             if (historicos.isEmpty()) {
-                event.getChannel().sendMessage("⚠️ Nenhuma partida encontrada.").queue();
+                event.getChannel().sendMessage("⚠️ Nenhuma partida encontrada para esse jogador.").queue();
                 return;
             }
 
@@ -198,7 +234,12 @@ public class BotListener extends ListenerAdapter {
                         h.getLoserDuo().getParticipant2().getPlayer().getNick()
                         : "❓ Ainda não definido";
 
+                String dataFormatada = h.getData() != null
+                        ? h.getData().format(formatter)
+                        : "Data não disponível";
+
                 mensagem.append("🆔 **ID:** `").append(h.getHistoryId()).append("`\n")
+                        .append("🗓️ **Data:** ").append(dataFormatada).append("\n")
                         .append("🥇 **Vencedor:** ").append(vencedor).append("\n")
                         .append("🥈 **Perdedor:** ").append(perdedor).append("\n\n");
             }
@@ -206,5 +247,39 @@ public class BotListener extends ListenerAdapter {
             event.getChannel().sendMessage(mensagem.toString()).queue();
         }
 
+
+        if(msg.contains("asafe")){
+            event.getChannel().sendMessage("Por favor não diga este nome novamente, sujeito a banimento!").queue();
+        }
+
+        if (msg.startsWith("!ganhador")) {
+            if (!partidasEmFinalizacao.containsKey(event.getAuthor().getId())) {
+                event.getChannel().sendMessage("⚠️ Você precisa usar `!finalizar <ID>` antes de informar o ganhador. Precoce").queue();
+                return;
+            }
+
+            UUID partidaId = partidasEmFinalizacao.get(event.getAuthor().getId());
+            String[] partes = msg.split(" ");
+            if (partes.length < 2 || (!partes[1].equalsIgnoreCase("duo1") && !partes[1].equalsIgnoreCase("duo2"))) {
+                event.getChannel().sendMessage("❌ Formato inválido. Use: `!ganhador duo1` ou `!ganhador duo2. AAAAAAAAAAAA").queue();
+                return;
+            }
+
+            String vencedor = partes[1].toLowerCase();
+
+            try {
+                History updatedHistory = historyService.updateMatch(partidaId, vencedor);
+                partidasEmFinalizacao.remove(event.getAuthor().getId());
+
+                event.getChannel().sendMessage("✅ Vencedor registrado com sucesso! 🏆").queue();
+
+            } catch (Exception e) {
+                event.getChannel().sendMessage("❌ Erro ao atualizar o resultado da partida: " + e.getMessage()).queue();
+            }
+        }
+
+
+
     }
+
 }

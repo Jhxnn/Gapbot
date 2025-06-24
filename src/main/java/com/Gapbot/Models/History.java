@@ -2,6 +2,7 @@ package com.Gapbot.Models;
 
 import jakarta.persistence.*;
 
+import java.time.LocalDate;
 import java.util.UUID;
 
 @Entity
@@ -29,6 +30,16 @@ public class History {
     @ManyToOne
     @JoinColumn(referencedColumnName = "id", name = "duo_loser")
     private Duo loserDuo;
+
+    private LocalDate data;
+
+    public LocalDate getData() {
+        return data;
+    }
+
+    public void setData(LocalDate data) {
+        this.data = data;
+    }
 
     public UUID getHistoryId() {
         return historyId;
