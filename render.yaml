@@ -1,0 +1,8 @@
+# render.yaml
+services:
+  - type: web
+    name: gapbot
+    runtime: docker
+    env: docker
+    plan: free
+    autoDeploy: true
