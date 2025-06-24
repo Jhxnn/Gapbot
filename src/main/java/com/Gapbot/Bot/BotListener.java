@@ -87,10 +87,11 @@ public class BotListener extends ListenerAdapter {
             String comandos = "**📋 Lista de Comandos Disponíveis:**\n\n" +
                     "🧾 `!comandos` — Lista todos os comandos disponíveis\n" +
                     "📝 `!registrar` — Registra o jogador no sistema\n" +
-                    "📊 `!ranking` — Mostra o ranking dos jogadores por Winrate\n" +
-                    "🔍 `!jogador @user` — Exibe os dados do jogador mencionado\n" +
                     "🎮 `!iniciar @j1 @j2 @j3 @j4` — Inicia uma partida com 4 jogadores mencionados\n" +
                     "🏁 `!finalizar <ID>` — Finaliza uma partida informando o ID\n" +
+                    "❌ `!cancelar <ID>` — Cancela uma partida informando o ID\n" +
+                    "📊 `!ranking` — Mostra o ranking dos jogadores por Winrate\n" +
+                    "🔍 `!jogador @user` — Exibe os dados do jogador mencionado\n" +
                     "📜 `!historico` — Lista todo o histórico de partidas\n" +
                     "📉 `!historico @user` — Mostra o histórico do jogador atual";
 
@@ -179,7 +180,7 @@ public class BotListener extends ListenerAdapter {
             String[] partes = msg.split(" ");
 
             if (partes.length < 2) {
-                event.getChannel().sendMessage("❌ Você precisa informar o ID da partida. Ex: `!finalizar <ID>. Chega dar vontade de se autodetonar aqui pqp`").queue();
+                event.getChannel().sendMessage("❌ Você precisa informar o ID da partida. Ex: `!finalizar <ID>`. Chega dar vontade de se autodetonar aqui pqp").queue();
                 return;
             }
 
@@ -225,13 +226,13 @@ public class BotListener extends ListenerAdapter {
 
             for (History h : historicos) {
                 String vencedor = h.getWinnnerDuo() != null
-                        ? h.getWinnnerDuo().getParticipant1().getPlayer().getNick() + " & " +
-                        h.getWinnnerDuo().getParticipant2().getPlayer().getNick()
+                        ? "**" + h.getWinnnerDuo().getParticipant1().getPlayer().getNick() + "** (" + h.getWinnnerDuo().getParticipant1().getChampion() + ") & " +
+                        "**" + h.getWinnnerDuo().getParticipant2().getPlayer().getNick() + "** (" + h.getWinnnerDuo().getParticipant2().getChampion() + ")"
                         : "❓ Ainda não definido";
 
                 String perdedor = h.getLoserDuo() != null
-                        ? h.getLoserDuo().getParticipant1().getPlayer().getNick() + " & " +
-                        h.getLoserDuo().getParticipant2().getPlayer().getNick()
+                        ? "**" + h.getLoserDuo().getParticipant1().getPlayer().getNick() + "** (" + h.getLoserDuo().getParticipant1().getChampion() + ") & " +
+                        "**" + h.getLoserDuo().getParticipant2().getPlayer().getNick() + "** (" + h.getLoserDuo().getParticipant2().getChampion() + ")"
                         : "❓ Ainda não definido";
 
                 String dataFormatada = h.getData() != null
@@ -242,6 +243,7 @@ public class BotListener extends ListenerAdapter {
                         .append("🗓️ **Data:** ").append(dataFormatada).append("\n")
                         .append("🥇 **Vencedor:** ").append(vencedor).append("\n")
                         .append("🥈 **Perdedor:** ").append(perdedor).append("\n\n");
+
             }
 
             event.getChannel().sendMessage(mensagem.toString()).queue();
@@ -261,7 +263,7 @@ public class BotListener extends ListenerAdapter {
             UUID partidaId = partidasEmFinalizacao.get(event.getAuthor().getId());
             String[] partes = msg.split(" ");
             if (partes.length < 2 || (!partes[1].equalsIgnoreCase("duo1") && !partes[1].equalsIgnoreCase("duo2"))) {
-                event.getChannel().sendMessage("❌ Formato inválido. Use: `!ganhador duo1` ou `!ganhador duo2. AAAAAAAAAAAA").queue();
+                event.getChannel().sendMessage("❌ Formato inválido. Use: `!ganhador duo1` ou `!ganhador duo2`. AAAAAAAAAAAA").queue();
                 return;
             }
 
@@ -275,6 +277,37 @@ public class BotListener extends ListenerAdapter {
 
             } catch (Exception e) {
                 event.getChannel().sendMessage("❌ Erro ao atualizar o resultado da partida: " + e.getMessage()).queue();
+            }
+        }
+        if (msg.startsWith("!cancelar")) {
+            String[] partes = msg.split(" ");
+
+            if (partes.length < 2) {
+                event.getChannel().sendMessage("❌ Você precisa informar o ID da partida. Ex: `!cancelar <ID>. ta se fazendo de pão pra ganhar linguiça`").queue();
+                return;
+            }
+
+            String idPartidaStr = partes[1];
+
+            try {
+                UUID idPartida = UUID.fromString(idPartidaStr);
+
+                Optional<History> optionalHistory = historyRepository.findById(idPartida);
+                if (optionalHistory.isEmpty()) {
+                    event.getChannel().sendMessage("⚠️ Partida não encontrada com esse ID.").queue();
+                    return;
+                }
+                int verifica = historyService.cancelarPartida(historyService.findById(idPartida));
+                if(verifica == 1){
+                    event.getChannel().sendMessage("❌ A partida já foi finalizada. Espertinho, ta querendo farmar winrate!").queue();
+                }
+                if(verifica == 2){
+                    event.getChannel().sendMessage("✅ Partida cancelada!").queue();
+                }
+
+
+            } catch (IllegalArgumentException e) {
+                event.getChannel().sendMessage("❌ ID inválido. Certifique-se de usar um UUID válido.").queue();
             }
         }
 

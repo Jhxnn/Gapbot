@@ -93,5 +93,18 @@ public class HistoryService {
         return  history;
 
     }
+    public History findById(UUID id){
+        return  historyRepository.findById(id).orElseThrow(()-> new RuntimeException("Nao foi possivel encotnrar"));
+    }
+
+    public int cancelarPartida(History history){
+        if(history.getWinnnerDuo() != null){
+            return 1;
+        }
+        else {
+            historyRepository.delete(history);
+            return 2;
+        }
+    }
 
 }
