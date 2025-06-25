@@ -35,64 +35,48 @@ public class HistoryService {
         return history;
 
     }
-    public History updateMatch(UUID id, String vencedor){
-        History history = historyRepository.findById(id).orElseThrow(()-> new RuntimeException("Não foi possivel encontrar"));
+    public History updateMatch(UUID id, String vencedor) {
+        History history = historyRepository.findById(id)
+                .orElseThrow(() -> new RuntimeException("Não foi possível encontrar"));
 
-        if("duo1".equals(vencedor)){
-            history.setWinnnerDuo(history.getDuo1());
-            history.setLoserDuo(history.getDuo2());
-            historyRepository.save(history);
-            Player player1 = history.getDuo1().getParticipant1().getPlayer();
-            Player player2 = history.getDuo1().getParticipant2().getPlayer();
-            Player player3 = history.getDuo2().getParticipant1().getPlayer();
-            Player player4 = history.getDuo2().getParticipant2().getPlayer();
-            player1.setWins(player1.getWins() + 1);
-            player2.setWins(player2.getWins() + 1);
-            player3.setLoses(player3.getLoses() + 1);
-            player4.setLoses(player4.getLoses() + 1);
+        Duo vencedorDuo, perdedorDuo;
 
-            playerRepository.save(player1);
-            playerRepository.save(player2);
-            playerRepository.save(player3);
-            playerRepository.save(player4);
-
-
-            return history;
+        if ("duo1".equalsIgnoreCase(vencedor)) {
+            vencedorDuo = history.getDuo1();
+            perdedorDuo = history.getDuo2();
+        } else {
+            vencedorDuo = history.getDuo2();
+            perdedorDuo = history.getDuo1();
         }
-        history.setWinnnerDuo(history.getDuo2());
-        history.setLoserDuo(history.getDuo1());
+
+        history.setWinnnerDuo(vencedorDuo);
+        history.setLoserDuo(perdedorDuo);
         historyRepository.save(history);
-        Player player1 = history.getDuo1().getParticipant1().getPlayer();
-        Player player2 = history.getDuo1().getParticipant2().getPlayer();
-        Player player3 = history.getDuo2().getParticipant1().getPlayer();
-        Player player4 = history.getDuo2().getParticipant2().getPlayer();
-        player1.setLoses(player1.getLoses() + 1);
-        player2.setLoses(player2.getLoses() + 1);
-        player3.setWins(player3.getWins() + 1);
-        player4.setWins(player4.getWins() + 1);
 
-        player1.setWinrate((player1.getWins() + player1.getLoses() == 0) ? 0 :
-                player1.getWins() / (player1.getWins() + player1.getLoses()) * 100);
+        List<Player> players = List.of(
+                vencedorDuo.getParticipant1().getPlayer(),
+                vencedorDuo.getParticipant2().getPlayer(),
+                perdedorDuo.getParticipant1().getPlayer(),
+                perdedorDuo.getParticipant2().getPlayer()
+        );
 
-        player2.setWinrate((player2.getWins() + player2.getLoses() == 0) ? 0 :
-             player2.getWins() / (player2.getWins() + player2.getLoses()) * 100);
+        players.get(0).setWins(players.get(0).getWins() + 1);
+        players.get(1).setWins(players.get(1).getWins() + 1);
+        players.get(2).setLoses(players.get(2).getLoses() + 1);
+        players.get(3).setLoses(players.get(3).getLoses() + 1);
 
-        player3.setWinrate((player3.getWins() + player3.getLoses() == 0) ? 0 :
-                 player3.getWins() / (player3.getWins() + player3.getLoses()) * 100);
+        // Atualiza winrate como int
+        for (Player p : players) {
+            int wins = p.getWins();
+            int losses = p.getLoses();
+            int winrate = (wins + losses == 0) ? 0 : (int) ((wins * 100.0) / (wins + losses));
+            p.setWinrate(winrate);
+            playerRepository.save(p);
+        }
 
-        player4.setWinrate((player4.getWins() + player4.getLoses() == 0) ? 0 :
-                ( player4.getWins() / (player4.getWins() + player4.getLoses()) * 100));
-
-        playerRepository.save(player1);
-        playerRepository.save(player2);
-        playerRepository.save(player3);
-        playerRepository.save(player4);
-
-
-
-        return  history;
-
+        return history;
     }
+
     public History findById(UUID id){
         return  historyRepository.findById(id).orElseThrow(()-> new RuntimeException("Nao foi possivel encotnrar"));
     }
